@@ -8,17 +8,17 @@
  * @return {Object[]}
  */
 function transformStateWithClones(state, actions) {
-  let stateCopy = { ...state };
   const result = [];
+  let stateCopy = { ...state };
 
   for (const action of actions) {
     switch (action.type) {
       case 'addProperties':
-        addProperties(stateCopy, action.extraData);
+        stateCopy = addProperties(stateCopy, action.extraData);
         break;
 
       case 'removeProperties':
-        removeProperties(stateCopy, action.keysToRemove);
+        stateCopy = removeProperties(stateCopy, action.keysToRemove);
         break;
 
       case 'clear':
@@ -26,29 +26,40 @@ function transformStateWithClones(state, actions) {
         break;
 
       default:
-        throw new Error('Unsupported action type: ' + action.type);
+        console.warn('Unsupported action type:', action.type);
+        break;
     }
 
     result.push({ ...stateCopy });
   }
 
+  console.log(result);
+
   return result;
 }
 
 function addProperties(state, extraData) {
-  if (extraData && typeof extraData === 'object') {
-    Object.assign(state, extraData);
+  if (!extraData || typeof extraData !== 'object' || Array.isArray(extraData)) {
+    return state;
   }
+
+  return { ...state, ...extraData };
 }
 
 function removeProperties(state, keysToRemove) {
   if (!Array.isArray(keysToRemove) || keysToRemove.length === 0) {
-    return;
+    return state;
   }
 
+  const nextState = { ...state };
+
   for (const key of keysToRemove) {
-    delete state[key];
+    if (Object.hasOwn(nextState, key)) {
+      delete nextState[key];
+    }
   }
+
+  return nextState;
 }
 
 module.exports = transformStateWithClones;
